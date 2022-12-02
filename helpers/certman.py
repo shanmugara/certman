@@ -48,7 +48,7 @@ class CertMan(object):
             lines = f.readlines()
             for line in lines:
                 print(line)
-                if line.strip().startswith('Environment="KUBELET_CONFIG_ARGS"'):
+                if line.strip().startswith('Environment="KUBELET_CONFIG_ARGS'):
                     print("this is our file")
                     kubeletcfg = line.split("=")[-1].strip('"')
                     break
