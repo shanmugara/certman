@@ -50,7 +50,7 @@ class CertMan(object):
                 print(line)
                 if line.strip().startswith('Environment="KUBELET_CONFIG_ARGS'):
                     print("this is our file")
-                    kubeletcfg = line.split("=")[-1].strip('"')
+                    kubeletcfg = line.split("=")[-1].strip().strip('"')
                     break
         print(f"kubelet {kubeletcfg}")
         if kubeletcfg:
