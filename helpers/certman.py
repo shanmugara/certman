@@ -48,10 +48,10 @@ class CertMan(object):
             lines = f.readlines()
             for line in lines:
                 print(line)
-                if line.startswith('Environment="KUBELET_CONFIG_ARGS"'):
-                    kubeletcfg = line.split("=")[-1]
+                if line.strip().startswith('Environment="KUBELET_CONFIG_ARGS"'):
+                    kubeletcfg = line.split("=")[-1].strip('"')
                     break
-
+        print(f"kubelet {kubeletcfg}")
         if kubeletcfg:
             with open(kubeletcfg) as f:
                 kubelet_dict = yaml.load(f, Loader=yaml.Loader)
