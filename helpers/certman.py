@@ -1,7 +1,7 @@
 import os
 from subprocess import check_output, DEVNULL
-import logging
-import OpenSSL
+import configparser
+import yaml
 
 from helpers.blp_logger import Blp_logger
 
@@ -40,5 +40,22 @@ class CertMan(object):
         except Exception as e:
             self.log.error(f"Error while running cmd {e}")
             return False
+
+    def parsekubletcfg(self):
+        sys_unit = "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
+        kubeletcfg = ""
+        with open(sys_unit) as f:
+            lines = f.readlines()
+            for line in lines:
+                if line.startswith('Environment="KUBELET_CONFIG_ARGS"'):
+                    kubeletcfg = line.split("=")[-1]
+                    break
+
+        if kubeletcfg:
+            with open(kubeletcfg) as f:
+                kubelet_dict = yaml.load(f, Loader=yaml.Loader)
+                return kubelet_dict
+
+
 
 
