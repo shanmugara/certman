@@ -47,6 +47,7 @@ class CertMan(object):
         with open(sys_unit) as f:
             lines = f.readlines()
             for line in lines:
+                print(line)
                 if line.startswith('Environment="KUBELET_CONFIG_ARGS"'):
                     kubeletcfg = line.split("=")[-1]
                     break
