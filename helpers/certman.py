@@ -8,16 +8,21 @@ from helpers.blp_logger import Blp_logger
 
 
 class CertMan(object):
-    def __init__(self, certfilename, keyfilename, days=6000, logdir="."):
+    def __init__(self, certfilename=None, keyfilename=None, days=6000, logdir="."):
         self.log = Blp_logger(logdir=logdir, logfile="certman.log")
-        self.currCert = certfilename
-        self.currKey = keyfilename
+        if not all([certfilename, keyfilename]):
+            # auto detect ca file and key paths
+            self.parsekubletcfg()
+            self.parsemanifest()
+        else:
+            self.currCert = certfilename
+            self.currKey = keyfilename
         self.outfile = ""
         self.days = days
         self.cert_dir, self.cert_f = os.path.split(self.currCert)
-        if not os.path.isfile(certfilename):
+        if not os.path.isfile(self.currCert):
             self.log.error("Cert file not found")
-        if not os.path.isfile(keyfilename):
+        if not os.path.isfile(self.currKey):
             self.log.error("Key file not found")
 
     def x509toreq(self):
@@ -75,10 +80,10 @@ class CertMan(object):
             for i in self.k_control_manifest['spec']['containers'][0]['command']:
                 if i.startswith("--cluster-signing-cert-file"):
                     _,cacert = i.split("=")
-                    self.cafilepath = cacert
+                    self.currCert = cacert
                 elif i.startswith("--cluster-signing-key-file"):
                     _,key = i.split("=")
-                    self.keyfilepath = key
+                    self.currKey = key
 
         except Exception as e:
             self.log.error(f"Error while getting cert file/key paths - {e}")
