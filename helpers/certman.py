@@ -10,10 +10,11 @@ from helpers.blp_logger import Blp_logger
 class CertMan(object):
     def __init__(self, certfilename=None, keyfilename=None, days=6000, logdir="."):
         self.log = Blp_logger(logdir=logdir, logfile="certman.log")
-        if not all([certfilename, keyfilename]):
+        if not any([certfilename, keyfilename]):
             # auto detect ca file and key paths
             self.parsekubletcfg()
             self.parsemanifest()
+            self.getcertfiles()
         else:
             self.currCert = certfilename
             self.currKey = keyfilename
@@ -54,7 +55,6 @@ class CertMan(object):
             with open(sys_unit) as f:
                 lines = f.readlines()
                 for line in lines:
-                    print(line)
                     if line.strip().startswith('Environment="KUBELET_CONFIG_ARGS'):
                         kubeletcfg = line.split("=")[-1].strip().strip('"')
                         break
