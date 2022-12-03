@@ -25,17 +25,23 @@ class CertMan(object):
             self.log.error("Cert file not found")
         if not os.path.isfile(self.currKey):
             self.log.error("Key file not found")
-
+        _outfiles_dir = os.path.join(self.workdir, "certman_outfiles")
+        if not os.path.isdir(_outfiles_dir):
+            try:
+                os.makedirs(_outfiles_dir)
+                self.outfiles_dir = _outfiles_dir
+            except Exception as e:
+                self.log.error(f"Error while cretaing dir {_outfiles_dir} - {e}")
 
     def x509toreq(self):
-        self.outfile = os.path.join(self.cert_dir, "new_"+self.cert_f+".req")
+        self.outfile = os.path.join(self.outfiles_dir, "new_"+self.cert_f+".req")
         cmd = f"openssl x509 -x509toreq -in {self.currCert} -signkey {self.currKey} -out {self.outfile}"
         cmd_out = self.run_subproc_cmd(cmd)
         if cmd_out:
             self.log.info(f"CSR generated and saved as {self.outfile}")
 
     def renewCert(self):
-        new_cert = os.path.join(self.cert_dir, "new_"+self.cert_f)
+        new_cert = os.path.join(self.outfiles_dir, "new_"+self.cert_f)
         cmd = f"openssl x509 -req -days {self.days} -in {self.outfile} -signkey {self.currKey} -out {new_cert}"
         cmd_out = self.run_subproc_cmd(cmd)
         if cmd_out:
