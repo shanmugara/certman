@@ -1,8 +1,7 @@
-import logging
 import os
 from subprocess import check_output, DEVNULL
-import configparser
 import yaml
+import shutil
 
 from helpers.blp_logger import Blp_logger
 
@@ -11,7 +10,7 @@ class CertMan(object):
     def __init__(self, certfilename=None, keyfilename=None, days=6000, logdir="."):
         self.log = Blp_logger(logdir=logdir, logfile="certman.log")
         if not any([certfilename, keyfilename]):
-            # auto detect ca file and key paths
+            # autodetect ca file and key paths
             self.parsekubletcfg()
             self.parsemanifest()
             self.getcertfiles()
@@ -20,11 +19,13 @@ class CertMan(object):
             self.currKey = keyfilename
         self.outfile = ""
         self.days = days
+        self.workdir = os.path.expanduser("~")
         self.cert_dir, self.cert_f = os.path.split(self.currCert)
         if not os.path.isfile(self.currCert):
             self.log.error("Cert file not found")
         if not os.path.isfile(self.currKey):
             self.log.error("Key file not found")
+
 
     def x509toreq(self):
         self.outfile = os.path.join(self.cert_dir, "new_"+self.cert_f+".req")
@@ -58,7 +59,6 @@ class CertMan(object):
                     if line.strip().startswith('Environment="KUBELET_CONFIG_ARGS'):
                         kubeletcfg = line.split("=")[-1].strip().strip('"')
                         break
-
             if kubeletcfg:
                 with open(kubeletcfg) as f:
                     kubelet_dict = yaml.load(f, Loader=yaml.Loader)
@@ -73,7 +73,7 @@ class CertMan(object):
                 self.k_control_manifest = yaml.load(f, Loader=yaml.Loader)
 
         except Exception as e:
-            self.log.error(f"error {e} while parsing kubernetes manifiest {manifestfile}")
+            self.log.error(f"error {e} while parsing kubernetes manifest {manifestfile}")
 
     def getcertfiles(self):
         try:
@@ -87,6 +87,22 @@ class CertMan(object):
 
         except Exception as e:
             self.log.error(f"Error while getting cert file/key paths - {e}")
+
+    def backup(self):
+        backup_dir = os.path.join(self.workdir, "certman_backups")
+        try:
+            if not os.path.isdir(backup_dir):
+                os.makedirs(backup_dir)
+        except Exception as e:
+            self.log.error(f"Error while creating dir {backup_dir} - {e}")
+            return False
+        try:
+            shutil.copy(self.currCert, backup_dir)
+            shutil.copy(self.currKey, backup_dir)
+        except Exception as e:
+            self.log.error(f"Error while backing up files - {e}")
+            return False
+
 
 
 
