@@ -1,3 +1,4 @@
+import logging
 import os
 from subprocess import check_output, DEVNULL
 import configparser
@@ -44,19 +45,44 @@ class CertMan(object):
     def parsekubletcfg(self):
         sys_unit = "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"
         kubeletcfg = ""
-        with open(sys_unit) as f:
-            lines = f.readlines()
-            for line in lines:
-                print(line)
-                if line.strip().startswith('Environment="KUBELET_CONFIG_ARGS'):
-                    print("this is our file")
-                    kubeletcfg = line.split("=")[-1].strip().strip('"')
-                    break
-        print(f"kubelet {kubeletcfg}")
-        if kubeletcfg:
-            with open(kubeletcfg) as f:
-                kubelet_dict = yaml.load(f, Loader=yaml.Loader)
-                return kubelet_dict
+        try:
+            with open(sys_unit) as f:
+                lines = f.readlines()
+                for line in lines:
+                    print(line)
+                    if line.strip().startswith('Environment="KUBELET_CONFIG_ARGS'):
+                        kubeletcfg = line.split("=")[-1].strip().strip('"')
+                        break
+
+            if kubeletcfg:
+                with open(kubeletcfg) as f:
+                    kubelet_dict = yaml.load(f, Loader=yaml.Loader)
+                    self.staticpodpath = kubelet_dict['staticPodPath']
+        except Exception as e:
+            self.staticpodpath = ""
+            self.log.error(f"Error parsing kubelet config - {e}")
+
+    def parsemanifest(self, manifestfile="kube-controller-manager.yaml"):
+        try:
+            with open(os.path.join(self.staticpodpath, manifestfile)) as f:
+                self.k_control_manifest = yaml.load(f, Loader=yaml.Loader)
+
+        except Exception as e:
+            self.log.error(f"error {e} while parsing kubernetes manifiest {manifestfile}")
+
+    def getcertfiles(self):
+        try:
+            for i in self.k_control_manifest['spec']['containers'][0]['command']:
+                if i.startswith("--cluster-signing-cert-file"):
+                    _,cacert = i.split("=")
+                    self.cafilepath = cacert
+                elif i.startswith("--cluster-signing-key-file"):
+                    _,key = i.split("=")
+                    self.keyfilepath = key
+
+        except Exception as e:
+            self.log.error(f"Error while getting cert file/key paths")
+
 
 
 
