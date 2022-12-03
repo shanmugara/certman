@@ -81,7 +81,7 @@ class CertMan(object):
                     self.keyfilepath = key
 
         except Exception as e:
-            self.log.error(f"Error while getting cert file/key paths")
+            self.log.error(f"Error while getting cert file/key paths - {e}")
 
 
 
