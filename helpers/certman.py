@@ -108,9 +108,3 @@ class CertMan(object):
         except Exception as e:
             self.log.error(f"Error while backing up files - {e}")
             return False
-
-
-
-
-
-
